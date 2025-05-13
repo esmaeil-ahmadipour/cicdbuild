@@ -90,6 +90,44 @@ jobs:
           ls -la "$RELEASE_DIR"
           test -f "$RELEASE_DIR/$APP_NAME.AppImage" || (echo "AppImage creation failed!" && exit 1)
 
+      - name: Verify AppImage
+        run: |
+          APP_NAME="${{ env.APP_NAME }}"
+          RELEASE_DIR="build/linux/x64/release"
+          APPIMAGE_PATH="$RELEASE_DIR/$APP_NAME.AppImage"
+          
+          # Check if file exists
+          if [ ! -f "$APPIMAGE_PATH" ]; then
+            echo "::error::AppImage not found at $APPIMAGE_PATH"
+            exit 1
+          fi
+          
+          # Get file info
+          FILE_SIZE=$(du -sh "$APPIMAGE_PATH" | cut -f1)
+          FILE_SIZE_BYTES=$(stat -c%s "$APPIMAGE_PATH")
+          FILE_SIZE_MB=$(echo "scale=2; $FILE_SIZE_BYTES/1024/1024" | bc)
+          MOD_DATE=$(date -r "$APPIMAGE_PATH" '+%Y-%m-%d %H:%M:%S')
+          FILE_TYPE=$(file "$APPIMAGE_PATH")
+          
+          # Output verification results
+          echo "AppImage Verification:"
+          echo "- Location: $APPIMAGE_PATH"
+          echo "- Size: $FILE_SIZE ($FILE_SIZE_MB MB)"
+          echo "- Last Modified: $MOD_DATE"
+          echo "- Type: $FILE_TYPE"
+          
+          # Verify minimum size (e.g., at least 10MB)
+          MIN_SIZE_MB=10
+          if (( $(echo "$FILE_SIZE_MB < $MIN_SIZE_MB" | bc -l) )); then
+            echo "::warning::AppImage might be too small ($FILE_SIZE_MB MB < $MIN_SIZE_MB MB minimum expected)"
+          fi
+          
+          # Verify executable permissions
+          if [ ! -x "$APPIMAGE_PATH" ]; then
+            echo "::warning::AppImage is not executable, fixing permissions..."
+            chmod +x "$APPIMAGE_PATH"
+          fi
+
       - name: Create Release
         id: create_release
         uses: softprops/action-gh-release@v2
