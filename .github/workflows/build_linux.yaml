@@ -142,9 +142,15 @@ jobs:
           ls -laR build/linux
 
       - name: Upload AppImage Release Asset
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref_name }}
-          files: build/linux/x64/release/bundle/build/linux/x64/release/cicdbuild.AppImage
+          name: Release v1.0.0
+          body: |
+                 Description of the release
+                 - Feature 1
+                 - Feature 2
+          draft: false
+          prerelease: false     #  files: build/linux/x64/release/bundle/build/linux/x64/release/cicdbuild.AppImage
