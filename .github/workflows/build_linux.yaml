@@ -90,15 +90,36 @@ jobs:
           ls -la "$RELEASE_DIR"
           test -f "$RELEASE_DIR/$APP_NAME.AppImage" || (echo "AppImage creation failed!" && exit 1)
 
+
+
+      - name: Debug - List build directory
+        run: |
+          find build -type f -name "*.AppImage"
+          ls -laR build/linux
+
       - name: Verify AppImage
         run: |
-          APP_NAME="${{ env.APP_NAME }}"
-          RELEASE_DIR="build/linux/x64/release"
-          APPIMAGE_PATH="$RELEASE_DIR/$APP_NAME.AppImage"
+          # Try common AppImage locations
+          POSSIBLE_PATHS=(
+            "build/linux/x64/release/bundle/${{ env.APP_NAME }}.AppImage"
+            "build/linux/x64/release/${{ env.APP_NAME }}.AppImage"
+            "build/linux/arm64/release/bundle/${{ env.APP_NAME }}.AppImage"
+          )
           
-          # Check if file exists
-          if [ ! -f "$APPIMAGE_PATH" ]; then
-            echo "::error::AppImage not found at $APPIMAGE_PATH"
+          FOUND=false
+          for path in "${POSSIBLE_PATHS[@]}"; do
+            if [ -f "$path" ]; then
+              APPIMAGE_PATH="$path"
+              FOUND=true
+              break
+            fi
+          done
+          
+          if [ "$FOUND" = false ]; then
+            echo "::error::AppImage not found in any of these locations:"
+            printf -- '- %s\n' "${POSSIBLE_PATHS[@]}"
+            echo "Directory contents:"
+            find build -type f
             exit 1
           fi
           
