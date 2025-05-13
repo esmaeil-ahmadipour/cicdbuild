@@ -153,4 +153,5 @@ jobs:
                  - Feature 1
                  - Feature 2
           draft: false
-          prerelease: false     #  files: build/linux/x64/release/bundle/build/linux/x64/release/cicdbuild.AppImage
+          prerelease: false    
+          files: build/linux/x64/release/bundle/build/linux/x64/release/cicdbuild.AppImage
