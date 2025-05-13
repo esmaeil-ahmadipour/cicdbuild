@@ -102,6 +102,11 @@ jobs:
           generate_release_notes: true
           update: true  # This will update the release if it already exists
 
+      - name: Debug - List build directory
+        run: |
+          find build -type f -name "*.AppImage"
+          ls -laR build/linux
+
       - name: Upload AppImage Release Asset
         uses: softprops/action-gh-release@v2
         env:
