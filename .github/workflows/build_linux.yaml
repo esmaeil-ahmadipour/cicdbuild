@@ -8,6 +8,9 @@ on:
 permissions:
   contents: write
 
+env:
+  APP_NAME: "cicdbuild"  # MUST match your executable name
+
 jobs:
   build-linux-appimage:
     runs-on: ubuntu-latest
@@ -45,8 +48,7 @@ jobs:
           # Build the Flutter app
           flutter build linux --release
           
-          # Set variables
-          APP_NAME="cicdbuild"  # MUST match your executable name
+          # Set paths
           BUNDLE_DIR="build/linux/x64/release/bundle"
           RELEASE_DIR="build/linux/x64/release"
           mkdir -p "$RELEASE_DIR"
@@ -61,11 +63,9 @@ jobs:
             echo "Exec=$APP_NAME" >> "$DESKTOP_FILE"
             echo "Icon=$APP_NAME" >> "$DESKTOP_FILE"
             echo "Comment=My Flutter Application" >> "$DESKTOP_FILE"
-            echo "Categories=Utility;" >> "$DESKTOP_FILE"  # Single category only
+            echo "Categories=Utility;" >> "$DESKTOP_FILE"
           else
             cp "linux/$APP_NAME.desktop" "$DESKTOP_FILE"
-            # Ensure single category
-            sed -i 's/Categories=.*/Categories=Utility;/' "$DESKTOP_FILE"
           fi
           
           # Prepare icon
@@ -77,11 +77,6 @@ jobs:
           cd "$BUNDLE_DIR"
           wget -q https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
           chmod +x appimagetool-x86_64.AppImage
-          
-          # Create target directory if it doesn't exist
-          mkdir -p "$RELEASE_DIR"
-          
-          # Run appimagetool with explicit output path
           ./appimagetool-x86_64.AppImage --appimage-extract
           ./squashfs-root/AppRun . "$RELEASE_DIR/$APP_NAME.AppImage"
           
@@ -89,11 +84,19 @@ jobs:
           ls -la "$RELEASE_DIR"
           test -f "$RELEASE_DIR/$APP_NAME.AppImage" || (echo "AppImage creation failed!" && exit 1)
 
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
+      - name: Upload AppImage artifact
+        uses: actions/upload-artifact@v4
         with:
-          files: build/linux/x64/release/${{ env.APP_NAME }}.AppImage
-          draft: false
-          prerelease: false
+          name: ${{ env.APP_NAME }}.AppImage
+          path: build/linux/x64/release/${{ env.APP_NAME }}.AppImage
+
+      - name: Create Release with AppImage
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          tag_name: ${{ github.ref }}
+          files: |
+            build/linux/x64/release/${{ env.APP_NAME }}.AppImage
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
