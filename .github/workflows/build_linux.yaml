@@ -93,6 +93,7 @@ jobs:
       - name: Create or Update Release
         id: create_release
         uses: softprops/action-gh-release@v2
+        continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -101,6 +102,39 @@ jobs:
           prerelease: false
           generate_release_notes: true
           update: true  # This will update the release if it already exists
+
+      - name: Validate required file
+        id: validate
+        run: |
+          # Set your file path (adjust as needed)
+          FILE="build/linux/x64/release/bundle/build/linux/x64/release/cicdbuild.AppImage"
+          
+          # Check existence
+          if [ ! -e "$FILE" ]; then
+            echo "::error::Required file $FILE does not exist"
+            echo "exists=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+          # Check if it's a regular file
+          if [ ! -f "$FILE" ]; then
+            echo "::error::$FILE exists but is not a regular file"
+            echo "exists=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+          # Get file size
+          SIZE=$(wc -c < "$FILE" | tr -d ' ')
+          echo "File size: $SIZE bytes"
+          echo "exists=true" >> $GITHUB_OUTPUT
+          echo "size=$SIZE" >> $GITHUB_OUTPUT
+          
+      - name: Process if file exists
+        if: steps.validate.outputs.exists == 'true'
+        run: |
+          echo "Processing file with size ${{ steps.validate.outputs.size }} bytes"
+          # Your processing steps here
+
 
       - name: Debug - List build directory
         run: |
@@ -114,4 +148,3 @@ jobs:
         with:
           tag_name: ${{ github.ref_name }}
           files: build/linux/x64/release/bundle/build/linux/x64/release/cicdbuild.AppImage
-
