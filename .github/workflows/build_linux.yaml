@@ -39,23 +39,9 @@ jobs:
           # Build the Flutter app
           flutter build linux --release
           
-          # Ensure the .desktop file exists
-          DESKTOP_FILE="build/linux/x64/release/bundle/$(basename $(pwd)).desktop"
-          if [ ! -f "$DESKTOP_FILE" ]; then
-            echo "[Desktop Entry]" > "$DESKTOP_FILE"
-            echo "Version=1.0" >> "$DESKTOP_FILE"
-            echo "Type=Application" >> "$DESKTOP_FILE"
-            echo "Name=$(basename $(pwd))" >> "$DESKTOP_FILE"
-            echo "Exec=$(basename $(pwd))" >> "$DESKTOP_FILE"
-            echo "Icon=$(basename $(pwd))" >> "$DESKTOP_FILE"
-            echo "Comment=Flutter Application" >> "$DESKTOP_FILE"
-            echo "Categories=Utility;" >> "$DESKTOP_FILE"
-          fi
-          
-          # Ensure the icon exists
-          ICON_FILE="build/linux/x64/release/bundle/$(basename $(pwd)).png"
-          if [ ! -f "$ICON_FILE" ]; then
-            cp linux/$(basename $(pwd)).png "$ICON_FILE" || true
+          # Copy the icon to the bundle if it exists
+          if [ -f "linux/sample_project.png" ]; then
+            cp "linux/sample_project.png" "build/linux/x64/release/bundle/"
           fi
           
           # Download and use appimagetool
@@ -63,17 +49,17 @@ jobs:
           wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
           chmod +x appimagetool-x86_64.AppImage
           ./appimagetool-x86_64.AppImage --appimage-extract
-          ./squashfs-root/AppRun . ../../$(basename $(pwd)).AppImage
+          ./squashfs-root/AppRun . ../../sample_project.AppImage
           
       - name: Upload AppImage as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: my_app.AppImage
-          path: build/linux/x64/release/$(basename $(pwd)).AppImage
+          name: sample_project.AppImage
+          path: build/linux/x64/release/sample_project.AppImage
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: build/linux/x64/release/$(basename $(pwd)).AppImage
+          files: build/linux/x64/release/sample_project.AppImage
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
