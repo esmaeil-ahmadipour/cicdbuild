@@ -8,9 +8,6 @@ on:
 permissions:
   contents: write
 
-env:
-  APP_NAME: "cicdbuild"  # MUST match your executable name
-
 jobs:
   build-linux-appimage:
     runs-on: ubuntu-latest
@@ -48,7 +45,8 @@ jobs:
           # Build the Flutter app
           flutter build linux --release
           
-          # Set paths
+          # Set variables
+          APP_NAME="cicdbuild"  # MUST match your executable name
           BUNDLE_DIR="build/linux/x64/release/bundle"
           RELEASE_DIR="build/linux/x64/release"
           mkdir -p "$RELEASE_DIR"
@@ -66,6 +64,7 @@ jobs:
             echo "Categories=Utility;" >> "$DESKTOP_FILE"
           else
             cp "linux/$APP_NAME.desktop" "$DESKTOP_FILE"
+            sed -i 's/Categories=.*/Categories=Utility;/' "$DESKTOP_FILE"
           fi
           
           # Prepare icon
@@ -81,22 +80,25 @@ jobs:
           ./squashfs-root/AppRun . "$RELEASE_DIR/$APP_NAME.AppImage"
           
           # Verify creation
+          echo "Contents of release directory:"
           ls -la "$RELEASE_DIR"
           test -f "$RELEASE_DIR/$APP_NAME.AppImage" || (echo "AppImage creation failed!" && exit 1)
 
-      - name: Upload AppImage artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.APP_NAME }}.AppImage
-          path: build/linux/x64/release/${{ env.APP_NAME }}.AppImage
+      - name: List files before release (debug)
+        run: |
+          echo "Current working directory: $(pwd)"
+          echo "Contents of build/linux/x64/release:"
+          ls -la build/linux/x64/release
+          echo "File exists check:"
+          test -f build/linux/x64/release/cicdbuild.AppImage && echo "File exists!" || echo "File missing!"
 
-      - name: Create Release with AppImage
+      - name: Create Release
         uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
         with:
-          tag_name: ${{ github.ref }}
           files: |
-            build/linux/x64/release/${{ env.APP_NAME }}.AppImage
+            build/linux/x64/release/cicdbuild.AppImage
+          draft: false
+          prerelease: false
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
