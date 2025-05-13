@@ -5,7 +5,6 @@ on:
     tags:
       - 'v*'
 
-# Add write permissions for releases
 permissions:
   contents: write
 
@@ -16,7 +15,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Required to get tag info
+          fetch-depth: 0
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -45,9 +44,10 @@ jobs:
           # Build the Flutter app
           flutter build linux --release
           
-          # Copy required files to bundle
+          # Set variables
+          APP_NAME="cicdbuild"  # CHANGE THIS to your actual app name
           BUNDLE_DIR="build/linux/x64/release/bundle"
-          APP_NAME="sample_project"  # Change this to your app name
+          RELEASE_DIR="build/linux/x64/release"
           
           # Ensure desktop file exists
           if [ -f "linux/$APP_NAME.desktop" ]; then
@@ -73,19 +73,17 @@ jobs:
           wget -q https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
           chmod +x appimagetool-x86_64.AppImage
           ./appimagetool-x86_64.AppImage --appimage-extract
-          ./squashfs-root/AppRun . ../../$APP_NAME.AppImage
+          ./squashfs-root/AppRun . "$RELEASE_DIR/$APP_NAME.AppImage"
           
-      - name: Verify AppImage exists
-        run: |
-          ls -la build/linux/x64/release/
-          test -f build/linux/x64/release/sample_project.AppImage || exit 1
+          # Verify the AppImage was created
+          ls -la "$RELEASE_DIR"
+          test -f "$RELEASE_DIR/$APP_NAME.AppImage" || (echo "AppImage not found!" && exit 1)
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: build/linux/x64/release/sample_project.AppImage
+          files: build/linux/x64/release/${{ env.APP_NAME }}.AppImage
           draft: false
           prerelease: false
-          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
