@@ -91,10 +91,20 @@ jobs:
           test -f "$RELEASE_DIR/$APP_NAME.AppImage" || (echo "AppImage creation failed!" && exit 1)
 
       - name: Create Release
+        id: create_release
         uses: softprops/action-gh-release@v2
-        with:
-          files: build/linux/x64/release/${{ env.APP_NAME }}.AppImage
-          draft: false
-          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+
+      - name: Upload AppImage Release Asset
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: build/linux/x64/release/*.AppImage
