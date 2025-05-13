@@ -30,7 +30,8 @@ jobs:
             pkg-config \
             clang \
             gcc \
-            git
+            git \
+            libfuse2
           flutter pub get
 
       - name: Build Linux AppImage
@@ -39,7 +40,12 @@ jobs:
           cd build/linux/x64/release/bundle
           wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
           chmod +x appimagetool-x86_64.AppImage
-          ./appimagetool-x86_64.AppImage . ../my_app.AppImage
+          # Extract the AppImage instead of running it directly
+          ./appimagetool-x86_64.AppImage --appimage-extract
+          # Use the extracted version to create our AppImage
+          ./squashfs-root/AppRun . ../../my_app.AppImage
+          # Clean up
+          rm -rf squashfs-root appimagetool-x86_64.AppImage
           
       - name: Upload AppImage as artifact
         uses: actions/upload-artifact@v4
