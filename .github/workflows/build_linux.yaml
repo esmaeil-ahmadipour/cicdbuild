@@ -39,13 +39,30 @@ jobs:
           # Build the Flutter app
           flutter build linux --release
           
-          # Copy the icon to the bundle if it exists
-          if [ -f "linux/sample_project.png" ]; then
-            cp "linux/sample_project.png" "build/linux/x64/release/bundle/"
+          # Copy required files to bundle
+          BUNDLE_DIR="build/linux/x64/release/bundle"
+          
+          # Ensure desktop file exists
+          if [ -f "linux/sample_project.desktop" ]; then
+            cp "linux/sample_project.desktop" "$BUNDLE_DIR/"
+          else
+            echo "[Desktop Entry]" > "$BUNDLE_DIR/sample_project.desktop"
+            echo "Version=1.0" >> "$BUNDLE_DIR/sample_project.desktop"
+            echo "Type=Application" >> "$BUNDLE_DIR/sample_project.desktop"
+            echo "Name=Sample Project" >> "$BUNDLE_DIR/sample_project.desktop"
+            echo "Exec=sample_project" >> "$BUNDLE_DIR/sample_project.desktop"
+            echo "Icon=sample_project" >> "$BUNDLE_DIR/sample_project.desktop"
+            echo "Comment=A sample Flutter application" >> "$BUNDLE_DIR/sample_project.desktop"
+            echo "Categories=Utility;" >> "$BUNDLE_DIR/sample_project.desktop"
           fi
           
-          # Download and use appimagetool
-          cd build/linux/x64/release/bundle
+          # Copy icon if it exists
+          if [ -f "linux/sample_project.png" ]; then
+            cp "linux/sample_project.png" "$BUNDLE_DIR/"
+          fi
+          
+          # Create AppImage
+          cd "$BUNDLE_DIR"
           wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
           chmod +x appimagetool-x86_64.AppImage
           ./appimagetool-x86_64.AppImage --appimage-extract
