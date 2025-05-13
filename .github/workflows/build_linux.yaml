@@ -79,9 +79,6 @@ jobs:
           wget -q https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
           chmod +x appimagetool-x86_64.AppImage
           
-          # Create target directory if it doesn't exist
-          mkdir -p "$RELEASE_DIR"
-          
           # Run appimagetool with explicit output path
           ./appimagetool-x86_64.AppImage --appimage-extract
           ./squashfs-root/AppRun . "$RELEASE_DIR/$APP_NAME.AppImage"
@@ -106,8 +103,8 @@ jobs:
       - name: Validate required file
         id: validate
         run: |
-          # Set your file path (adjust as needed)
-          FILE="build/linux/x64/release/bundle/build/linux/x64/release/cicdbuild.AppImage"
+          # Correct file path
+          FILE="build/linux/x64/release/cicdbuild.AppImage"
           
           # Check existence
           if [ ! -e "$FILE" ]; then
@@ -133,8 +130,6 @@ jobs:
         if: steps.validate.outputs.exists == 'true'
         run: |
           echo "Processing file with size ${{ steps.validate.outputs.size }} bytes"
-          # Your processing steps here
-
 
       - name: Debug - List build directory
         run: |
@@ -154,4 +149,4 @@ jobs:
                  - Feature 2
           draft: false
           prerelease: false    
-          files: build/linux/x64/release/bundle/build/linux/x64/release/cicdbuild.AppImage
+          files: build/linux/x64/release/cicdbuild.AppImage
