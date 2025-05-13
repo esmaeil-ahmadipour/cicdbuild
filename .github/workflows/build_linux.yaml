@@ -5,12 +5,18 @@ on:
     tags:
       - 'v*'
 
+# Add write permissions for releases
+permissions:
+  contents: write
+
 jobs:
   build-linux-appimage:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required to get tag info
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -41,42 +47,45 @@ jobs:
           
           # Copy required files to bundle
           BUNDLE_DIR="build/linux/x64/release/bundle"
+          APP_NAME="sample_project"  # Change this to your app name
           
           # Ensure desktop file exists
-          if [ -f "linux/sample_project.desktop" ]; then
-            cp "linux/sample_project.desktop" "$BUNDLE_DIR/"
+          if [ -f "linux/$APP_NAME.desktop" ]; then
+            cp "linux/$APP_NAME.desktop" "$BUNDLE_DIR/"
           else
-            echo "[Desktop Entry]" > "$BUNDLE_DIR/sample_project.desktop"
-            echo "Version=1.0" >> "$BUNDLE_DIR/sample_project.desktop"
-            echo "Type=Application" >> "$BUNDLE_DIR/sample_project.desktop"
-            echo "Name=Sample Project" >> "$BUNDLE_DIR/sample_project.desktop"
-            echo "Exec=sample_project" >> "$BUNDLE_DIR/sample_project.desktop"
-            echo "Icon=sample_project" >> "$BUNDLE_DIR/sample_project.desktop"
-            echo "Comment=A sample Flutter application" >> "$BUNDLE_DIR/sample_project.desktop"
-            echo "Categories=Utility;" >> "$BUNDLE_DIR/sample_project.desktop"
+            echo "[Desktop Entry]" > "$BUNDLE_DIR/$APP_NAME.desktop"
+            echo "Version=1.0" >> "$BUNDLE_DIR/$APP_NAME.desktop"
+            echo "Type=Application" >> "$BUNDLE_DIR/$APP_NAME.desktop"
+            echo "Name=${APP_NAME^}" >> "$BUNDLE_DIR/$APP_NAME.desktop"
+            echo "Exec=$APP_NAME" >> "$BUNDLE_DIR/$APP_NAME.desktop"
+            echo "Icon=$APP_NAME" >> "$BUNDLE_DIR/$APP_NAME.desktop"
+            echo "Comment=A Flutter application" >> "$BUNDLE_DIR/$APP_NAME.desktop"
+            echo "Categories=Utility;" >> "$BUNDLE_DIR/$APP_NAME.desktop"
           fi
           
           # Copy icon if it exists
-          if [ -f "linux/sample_project.png" ]; then
-            cp "linux/sample_project.png" "$BUNDLE_DIR/"
+          if [ -f "linux/$APP_NAME.png" ]; then
+            cp "linux/$APP_NAME.png" "$BUNDLE_DIR/"
           fi
           
           # Create AppImage
           cd "$BUNDLE_DIR"
-          wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+          wget -q https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
           chmod +x appimagetool-x86_64.AppImage
           ./appimagetool-x86_64.AppImage --appimage-extract
-          ./squashfs-root/AppRun . ../../sample_project.AppImage
+          ./squashfs-root/AppRun . ../../$APP_NAME.AppImage
           
-      - name: Upload AppImage as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: sample_project.AppImage
-          path: build/linux/x64/release/sample_project.AppImage
+      - name: Verify AppImage exists
+        run: |
+          ls -la build/linux/x64/release/
+          test -f build/linux/x64/release/sample_project.AppImage || exit 1
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           files: build/linux/x64/release/sample_project.AppImage
+          draft: false
+          prerelease: false
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
