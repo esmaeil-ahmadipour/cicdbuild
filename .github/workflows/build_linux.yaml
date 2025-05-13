@@ -36,26 +36,44 @@ jobs:
 
       - name: Build Linux AppImage
         run: |
+          # Build the Flutter app
           flutter build linux --release
+          
+          # Ensure the .desktop file exists
+          DESKTOP_FILE="build/linux/x64/release/bundle/$(basename $(pwd)).desktop"
+          if [ ! -f "$DESKTOP_FILE" ]; then
+            echo "[Desktop Entry]" > "$DESKTOP_FILE"
+            echo "Version=1.0" >> "$DESKTOP_FILE"
+            echo "Type=Application" >> "$DESKTOP_FILE"
+            echo "Name=$(basename $(pwd))" >> "$DESKTOP_FILE"
+            echo "Exec=$(basename $(pwd))" >> "$DESKTOP_FILE"
+            echo "Icon=$(basename $(pwd))" >> "$DESKTOP_FILE"
+            echo "Comment=Flutter Application" >> "$DESKTOP_FILE"
+            echo "Categories=Utility;" >> "$DESKTOP_FILE"
+          fi
+          
+          # Ensure the icon exists
+          ICON_FILE="build/linux/x64/release/bundle/$(basename $(pwd)).png"
+          if [ ! -f "$ICON_FILE" ]; then
+            cp linux/$(basename $(pwd)).png "$ICON_FILE" || true
+          fi
+          
+          # Download and use appimagetool
           cd build/linux/x64/release/bundle
           wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
           chmod +x appimagetool-x86_64.AppImage
-          # Extract the AppImage instead of running it directly
           ./appimagetool-x86_64.AppImage --appimage-extract
-          # Use the extracted version to create our AppImage
-          ./squashfs-root/AppRun . ../../my_app.AppImage
-          # Clean up
-          rm -rf squashfs-root appimagetool-x86_64.AppImage
+          ./squashfs-root/AppRun . ../../$(basename $(pwd)).AppImage
           
       - name: Upload AppImage as artifact
         uses: actions/upload-artifact@v4
         with:
           name: my_app.AppImage
-          path: build/linux/x64/release/my_app.AppImage
+          path: build/linux/x64/release/$(basename $(pwd)).AppImage
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: build/linux/x64/release/my_app.AppImage
+          files: build/linux/x64/release/$(basename $(pwd)).AppImage
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
