@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Sample Project
+Exec=sample_project
+Icon=sample_project
+Comment=A simple task management application
+Categories=Utility;Office;
+
+# Optional fields (recommended)
+Terminal=false
