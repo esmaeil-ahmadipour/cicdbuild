@@ -5,6 +5,7 @@ Name=cicdbuild
 Exec=cicdbuild
 Icon=cicdbuild
 Comment=A simple task management application
+Categories=Utility;
 
 # Optional fields (recommended)
 Terminal=false
