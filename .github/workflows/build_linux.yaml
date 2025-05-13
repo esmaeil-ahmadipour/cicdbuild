@@ -75,13 +75,12 @@ jobs:
           fi
           
           # Create AppImage
-          cd "$BUNDLE_DIR"
-          wget -q https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+          wget -q -O appimagetool-x86_64.AppImage https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
           chmod +x appimagetool-x86_64.AppImage
           
           # Run appimagetool with explicit output path
           ./appimagetool-x86_64.AppImage --appimage-extract
-          ./squashfs-root/AppRun . "$RELEASE_DIR/$APP_NAME.AppImage"
+          ./squashfs-root/AppRun "$BUNDLE_DIR" "$RELEASE_DIR/$APP_NAME.AppImage"
           
           # Verify creation
           ls -la "$RELEASE_DIR"
