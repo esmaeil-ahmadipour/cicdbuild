@@ -90,65 +90,6 @@ jobs:
           ls -la "$RELEASE_DIR"
           test -f "$RELEASE_DIR/$APP_NAME.AppImage" || (echo "AppImage creation failed!" && exit 1)
 
-
-
-      - name: Debug - List build directory
-        run: |
-          find build -type f -name "*.AppImage"
-          ls -laR build/linux
-
-      - name: Verify AppImage
-        run: |
-          # Try common AppImage locations
-          POSSIBLE_PATHS=(
-            "build/linux/x64/release/bundle/${{ env.APP_NAME }}.AppImage"
-            "build/linux/x64/release/${{ env.APP_NAME }}.AppImage"
-            "build/linux/arm64/release/bundle/${{ env.APP_NAME }}.AppImage"
-          )
-          
-          FOUND=false
-          for path in "${POSSIBLE_PATHS[@]}"; do
-            if [ -f "$path" ]; then
-              APPIMAGE_PATH="$path"
-              FOUND=true
-              break
-            fi
-          done
-          
-          if [ "$FOUND" = false ]; then
-            echo "::error::AppImage not found in any of these locations:"
-            printf -- '- %s\n' "${POSSIBLE_PATHS[@]}"
-            echo "Directory contents:"
-            find build -type f
-            exit 1
-          fi
-          
-          # Get file info
-          FILE_SIZE=$(du -sh "$APPIMAGE_PATH" | cut -f1)
-          FILE_SIZE_BYTES=$(stat -c%s "$APPIMAGE_PATH")
-          FILE_SIZE_MB=$(echo "scale=2; $FILE_SIZE_BYTES/1024/1024" | bc)
-          MOD_DATE=$(date -r "$APPIMAGE_PATH" '+%Y-%m-%d %H:%M:%S')
-          FILE_TYPE=$(file "$APPIMAGE_PATH")
-          
-          # Output verification results
-          echo "AppImage Verification:"
-          echo "- Location: $APPIMAGE_PATH"
-          echo "- Size: $FILE_SIZE ($FILE_SIZE_MB MB)"
-          echo "- Last Modified: $MOD_DATE"
-          echo "- Type: $FILE_TYPE"
-          
-          # Verify minimum size (e.g., at least 10MB)
-          MIN_SIZE_MB=10
-          if (( $(echo "$FILE_SIZE_MB < $MIN_SIZE_MB" | bc -l) )); then
-            echo "::warning::AppImage might be too small ($FILE_SIZE_MB MB < $MIN_SIZE_MB MB minimum expected)"
-          fi
-          
-          # Verify executable permissions
-          if [ ! -x "$APPIMAGE_PATH" ]; then
-            echo "::warning::AppImage is not executable, fixing permissions..."
-            chmod +x "$APPIMAGE_PATH"
-          fi
-
       - name: Create Release
         id: create_release
         uses: softprops/action-gh-release@v2
@@ -166,4 +107,5 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref_name }}
-          files: build/linux/x64/release/*.AppImage
+          files: build/linux/x64/release/bundle/build/linux/x64/release/cicdbuild.AppImage
+
