@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop">
+  <id>cicdbuild.desktop</id>
+  <name>cicdbuild</name>
+  <summary>Your application description</summary>
+  <metadata_license>MIT</metadata_license>
+  <project_license>MIT</project_license>
+  <developer_name>Your Name</developer_name>
+</component>
