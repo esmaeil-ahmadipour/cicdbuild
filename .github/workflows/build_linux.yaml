@@ -1,0 +1,46 @@
+name: Flutter Linux AppImage Release
+
+on:
+  push:
+    tags:
+      - 'v*' # Triggers on tags starting with 'v'
+
+jobs:
+  build-linux-appimage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          architecture: x64
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-0 libblkid1 liblzma5
+          flutter pub get
+
+      - name: Build Linux AppImage
+        run: |
+          flutter build linux --release
+          cd build/linux/x64/release/bundle
+          wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x appimagetool-x86_64.AppImage
+          ./appimagetool-x86_64.AppImage . ../my_app.AppImage
+          
+      - name: Upload AppImage as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: my_app.AppImage
+          path: build/linux/x64/release/my_app.AppImage
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: build/linux/x64/release/my_app.AppImage
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
