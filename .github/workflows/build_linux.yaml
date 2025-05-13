@@ -49,6 +49,8 @@ jobs:
           APP_NAME="cicdbuild"  # MUST match your executable name
           BUNDLE_DIR="build/linux/x64/release/bundle"
           RELEASE_DIR="build/linux/x64/release"
+          
+          # Create release directory (absolute path)
           mkdir -p "$RELEASE_DIR"
           
           # Prepare desktop file
@@ -67,38 +69,36 @@ jobs:
             sed -i 's/Categories=.*/Categories=Utility;/' "$DESKTOP_FILE"
           fi
           
-          # Prepare icon
+          # Prepare icon (required)
           if [ -f "linux/$APP_NAME.png" ]; then
             cp "linux/$APP_NAME.png" "$BUNDLE_DIR/"
+          else
+            # Create a blank icon if none exists
+            convert -size 256x256 xc:white "$BUNDLE_DIR/$APP_NAME.png"
           fi
           
           # Create AppImage
           cd "$BUNDLE_DIR"
           wget -q https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
           chmod +x appimagetool-x86_64.AppImage
+          
+          # Use absolute path for output
+          OUTPUT_PATH="$GITHUB_WORKSPACE/$RELEASE_DIR/$APP_NAME.AppImage"
+          
+          # Extract and run appimagetool
           ./appimagetool-x86_64.AppImage --appimage-extract
-          ./squashfs-root/AppRun . "$RELEASE_DIR/$APP_NAME.AppImage"
+          ./squashfs-root/AppRun . "$OUTPUT_PATH"
           
           # Verify creation
-          echo "Contents of release directory:"
+          echo "Build artifacts:"
           ls -la "$RELEASE_DIR"
-          test -f "$RELEASE_DIR/$APP_NAME.AppImage" || (echo "AppImage creation failed!" && exit 1)
-
-      - name: List files before release (debug)
-        run: |
-          echo "Current working directory: $(pwd)"
-          echo "Contents of build/linux/x64/release:"
-          ls -la build/linux/x64/release
-          echo "File exists check:"
-          test -f build/linux/x64/release/cicdbuild.AppImage && echo "File exists!" || echo "File missing!"
+          test -f "$OUTPUT_PATH" || (echo "AppImage creation failed!" && exit 1)
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            build/linux/x64/release/cicdbuild.AppImage
+          files: build/linux/x64/release/${{ env.APP_NAME }}.AppImage
           draft: false
           prerelease: false
-          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
